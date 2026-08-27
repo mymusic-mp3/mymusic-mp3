@@ -1,0 +1,23 @@
+{
+  "name": "My Music MP3",
+  "short_name": "My Music",
+  "description": "My Music MP3 - Listen and download your favorite songs.",
+  "start_url": "/mymusic-mp3/",
+  "scope": "/mymusic-mp3/",
+  "display": "standalone",
+  "background_color": "#08090d",
+  "theme_color": "#7b20ff",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/mymusic-mp3/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/mymusic-mp3/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
