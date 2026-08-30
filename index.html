@@ -972,6 +972,21 @@ body{
     text-align:center;
   }
 }
+/* ================= LANGUAGE CIRCLES ================= */
+.language-circle{
+  width:36px;
+  height:36px;
+  min-width:36px;
+  border-radius:50%;
+  border:2px solid currentColor;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:13px;
+  font-weight:800;
+  line-height:1;
+  box-sizing:border-box;
+}
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -1025,51 +1040,16 @@ body{
 <aside class="sidebar">
 
   <div class="nav-item active" data-section="home">
-    <span class="nav-icon">⌂</span>
-    <span>Home</span>
+    <span class="nav-icon"><strong>⌂</strong></span>
+    <span><strong>Home</strong></span>
   </div>
 
     <div class="nav-item" id="artistsNav">
-  <span class="nav-icon">♙</span>
-  <span>Artists</span>
+  <span class="nav-icon"><strong>♙</strong></span>
+  <span><strong>Artists</strong></span>
 </div>
   
-  <div class="section-title">CATEGORIES</div>
-
-  <div class="nav-item category-filter" data-filter="Malayalam">
-    <span class="nav-icon"><strong>M</strong></span>
-    <span>Malayalam Songs</span>
-  </div>
-
-  <div class="nav-item category-filter" data-filter="Tamil">
-    <span class="nav-icon"><strong>Ta</strong></span>
-    <span>Tamil Songs</span>
-  </div>
-
-  <div class="nav-item category-filter" data-filter="Hindi">
-    <span class="nav-icon"><strong>H</strong></span>
-    <span>Hindi Songs</span>
-  </div>
-
-  <div class="nav-item category-filter" data-filter="English">
-    <span class="nav-icon"><strong>En</strong></span>
-    <span>English Songs</span>
-  </div>
-
-  <div class="nav-item category-filter" data-filter="Telugu">
-    <span class="nav-icon"><strong>Te</strong></span>
-    <span>Telugu Songs</span>
-  </div>
-
-  <div class="nav-item category-filter" data-filter="Kannada">
-    <span class="nav-icon"><strong>K</strong></span>
-    <span>Kannada Songs</span>
-  </div>
-
-  <div class="nav-item category-filter" data-filter="Arabic">
-    <span class="nav-icon"><strong>Ar</strong></span>
-    <span>Arabic Songs</span>
-  </div>
+  <div class="section-title">CATEGORIES</div> <div class="nav-item category-filter" data-filter="Malayalam"> <span class="nav-icon language-circle">M</span> <span>Malayalam Songs</span> </div> <div class="nav-item category-filter" data-filter="Tamil"> <span class="nav-icon language-circle">Ta</span> <span>Tamil Songs</span> </div> <div class="nav-item category-filter" data-filter="Hindi"> <span class="nav-icon language-circle">H</span> <span>Hindi Songs</span> </div> <div class="nav-item category-filter" data-filter="English"> <span class="nav-icon language-circle">En</span> <span>English Songs</span> </div> <div class="nav-item category-filter" data-filter="Telugu"> <span class="nav-icon language-circle">Te</span> <span>Telugu Songs</span> </div> <div class="nav-item category-filter" data-filter="Kannada"> <span class="nav-icon language-circle">K</span> <span>Kannada Songs</span> </div> <div class="nav-item category-filter" data-filter="Arabic"> <span class="nav-icon language-circle">Ar</span> <span>Arabic Songs</span> </div>
 
   
   <div class="playlist-card">
