@@ -1629,10 +1629,11 @@ body{
 <footer class="player">
 
 <audio
-id="audioPlayer"
-preload="metadata"
-
-> </audio>
+  id="audioPlayer"
+  preload="auto"
+  playsinline
+  crossorigin="anonymous"
+></audio>
 
   <div class="now-playing">
 
@@ -2092,8 +2093,7 @@ function escapeHTML(value){
 
 function playSong(index){
 
-  const song =
-    songs[index];
+  const song = songs[index];
 
 
   if(!song){
@@ -2111,9 +2111,10 @@ function playSong(index){
   }
 
 
-  currentSong =
-    index;
+  currentSong = index;
 
+
+  /* ================= PLAYER INFO ================= */
 
   document.getElementById(
     "playerImage"
@@ -2136,33 +2137,40 @@ function playSong(index){
     "Unknown Artist";
 
 
-  updateMediaSession(song);
-
+  /* ================= STOP OLD SONG ================= */
 
   audio.pause();
 
-
   isPlaying = false;
-
 
   updatePlayButton();
 
-
   setLoading(true);
-
-
-  audio.src =
-    song.url;
-
-
-  audio.load();
-
 
   resetProgress();
 
 
-  renderSongs(currentList);
+  /* ================= LOAD NEW SONG ================= */
 
+  audio.src = song.url;
+
+  audio.load();
+
+
+  /* =================================================
+     IMPORTANT:
+     UPDATE LOCK SCREEN AFTER NEW AUDIO SOURCE
+     ================================================= */
+
+  updateMediaSession(song);
+
+
+  renderSongs(
+    currentList
+  );
+
+
+  /* ================= START PLAYBACK ================= */
 
   audio.play()
     .then(()=>{
@@ -2172,6 +2180,10 @@ function playSong(index){
       setLoading(false);
 
       updatePlayButton();
+
+      updateMediaPlaybackState();
+
+      updateMediaSessionPosition();
 
       renderSongs(
         currentList
@@ -2185,15 +2197,20 @@ function playSong(index){
         error
       );
 
+
       isPlaying = false;
 
       setLoading(false);
 
       updatePlayButton();
 
+      updateMediaPlaybackState();
+
+
       renderSongs(
         currentList
       );
+
 
       showToast(
         "MP3 play ചെയ്യാൻ കഴിഞ്ഞില്ല. URL / Supabase storage check ചെയ്യുക."
@@ -2202,7 +2219,6 @@ function playSong(index){
     });
 
 }
-
 
 /* =====================================================
    PLAY / PAUSE
@@ -2279,93 +2295,352 @@ function updatePlayButton(){
 
 
 /* =====================================================
-   MEDIA SESSION / LOCK SCREEN CONTROLS
-   Keeps the player connected to Android lock-screen media controls.
+   ANDROID LOCK SCREEN / MEDIA SESSION
+===================================================== */
+
+function setupMediaSession(){
+
+  if(!("mediaSession" in navigator)){
+    console.warn("Media Session API not available");
+    return;
+  }
+
+  const setAction = (action, handler) => {
+
+    try{
+
+      navigator.mediaSession.setActionHandler(
+        action,
+        handler
+      );
+
+    }catch(error){
+
+      console.log(
+        "Media action not supported:",
+        action
+      );
+
+    }
+
+  };
+
+
+  /* PLAY */
+
+  setAction("play", async ()=>{
+
+    try{
+
+      await audio.play();
+
+      isPlaying = true;
+
+      updatePlayButton();
+      updateMediaPlaybackState();
+
+    }catch(error){
+
+      console.error(
+        "Lock screen play error:",
+        error
+      );
+
+    }
+
+  });
+
+
+  /* PAUSE */
+
+  setAction("pause", ()=>{
+
+    audio.pause();
+
+    isPlaying = false;
+
+    updatePlayButton();
+    updateMediaPlaybackState();
+
+  });
+
+
+  /* NEXT */
+
+  setAction("nexttrack", ()=>{
+
+    nextSong();
+
+  });
+
+
+  /* PREVIOUS */
+
+  setAction("previoustrack", ()=>{
+
+    previousSong();
+
+  });
+
+
+  /* SEEK BACK */
+
+  setAction(
+    "seekbackward",
+    (details)=>{
+
+      const offset =
+        details.seekOffset || 10;
+
+      audio.currentTime =
+        Math.max(
+          0,
+          audio.currentTime - offset
+        );
+
+    }
+  );
+
+
+  /* SEEK FORWARD */
+
+  setAction(
+    "seekforward",
+    (details)=>{
+
+      const offset =
+        details.seekOffset || 10;
+
+      if(
+        Number.isFinite(audio.duration)
+      ){
+
+        audio.currentTime =
+          Math.min(
+            audio.duration,
+            audio.currentTime + offset
+          );
+
+      }
+
+    }
+  );
+
+
+  /* SEEK TO */
+
+  setAction(
+    "seekto",
+    (details)=>{
+
+      if(
+        typeof details.seekTime !== "number"
+      ){
+
+        return;
+
+      }
+
+      if(
+        details.fastSeek &&
+        typeof audio.fastSeek === "function"
+      ){
+
+        audio.fastSeek(
+          details.seekTime
+        );
+
+      }else{
+
+        audio.currentTime =
+          details.seekTime;
+
+      }
+
+    }
+  );
+
+
+  /* STOP */
+
+  setAction("stop", ()=>{
+
+    audio.pause();
+
+    audio.currentTime = 0;
+
+    isPlaying = false;
+
+    updatePlayButton();
+    updateMediaPlaybackState();
+
+  });
+
+}
+
+
+/* =====================================================
+   UPDATE LOCK SCREEN INFORMATION
 ===================================================== */
 
 function updateMediaSession(song){
 
-  if(!("mediaSession" in navigator) || !song){
+  if(
+    !("mediaSession" in navigator) ||
+    !song
+  ){
+
     return;
+
   }
+
 
   try{
 
-    navigator.mediaSession.metadata = new MediaMetadata({
-      title: song.title || "Unknown Song",
-      artist: song.artist || "Unknown Artist",
-      album: "My Music",
-      artwork: song.image ? [
-        {
-          src: song.image,
-          sizes: "512x512",
-          type: "image/jpeg"
-        }
-      ] : []
-    });
+    const artwork =
+      song.image
+        ? [
+            {
+              src: song.image,
+              sizes: "96x96",
+              type: "image/jpeg"
+            },
+            {
+              src: song.image,
+              sizes: "192x192",
+              type: "image/jpeg"
+            },
+            {
+              src: song.image,
+              sizes: "512x512",
+              type: "image/jpeg"
+            }
+          ]
+        : [];
 
-    const setAction = (action, handler)=>{
-      try{
-        navigator.mediaSession.setActionHandler(action, handler);
-      }catch(error){
-        console.log("Media Session action not supported:", action);
-      }
-    };
 
-    setAction("play", ()=>{
-      audio.play().catch(()=>{});
-    });
+    navigator.mediaSession.metadata =
+      new MediaMetadata({
 
-    setAction("pause", ()=>{
-      audio.pause();
-    });
+        title:
+          song.title ||
+          "Unknown Song",
 
-    setAction("previoustrack", ()=>{
-      previousSong();
-    });
+        artist:
+          song.artist ||
+          "Unknown Artist",
 
-    setAction("nexttrack", ()=>{
-      nextSong();
-    });
+        album:
+          song.album ||
+          "My Music",
 
-    setAction("seekbackward", (details)=>{
-      const seconds = details.seekOffset || 10;
-      audio.currentTime = Math.max(0, audio.currentTime - seconds);
-    });
+        artwork:
+          artwork
 
-    setAction("seekforward", (details)=>{
-      const seconds = details.seekOffset || 10;
-      audio.currentTime = Math.min(
-        audio.duration || Infinity,
-        audio.currentTime + seconds
-      );
-    });
+      });
 
-    setAction("seekto", (details)=>{
-      if(details.fastSeek && "fastSeek" in audio){
-        audio.fastSeek(details.seekTime);
-      }else{
-        audio.currentTime = details.seekTime;
-      }
-    });
+
+    updateMediaPlaybackState();
+
+    updateMediaSessionPosition();
 
   }catch(error){
-    console.log("Media Session setup error:", error);
+
+    console.error(
+      "Media Session metadata error:",
+      error
+    );
+
   }
 
 }
 
 
+/* =====================================================
+   PLAYBACK STATE
+===================================================== */
+
 function updateMediaPlaybackState(){
 
-  if(!("mediaSession" in navigator)){
+  if(
+    !("mediaSession" in navigator)
+  ){
+
     return;
+
   }
 
+
   try{
+
     navigator.mediaSession.playbackState =
-      audio.paused ? "paused" : "playing";
-  }catch(error){}
+      audio.paused
+        ? "paused"
+        : "playing";
+
+  }catch(error){
+
+    console.log(
+      "Playback state error:",
+      error
+    );
+
+  }
+
+}
+
+
+/* =====================================================
+   LOCK SCREEN PROGRESS
+===================================================== */
+
+function updateMediaSessionPosition(){
+
+  if(
+    !("mediaSession" in navigator)
+  ){
+
+    return;
+
+  }
+
+
+  if(
+    !Number.isFinite(audio.duration) ||
+    audio.duration <= 0
+  ){
+
+    return;
+
+  }
+
+
+  try{
+
+    navigator.mediaSession.setPositionState({
+
+      duration:
+        audio.duration,
+
+      playbackRate:
+        audio.playbackRate || 1,
+
+      position:
+        Math.min(
+          audio.currentTime,
+          audio.duration
+        )
+
+    });
+
+  }catch(error){
+
+    console.log(
+      "Media position error:",
+      error
+    );
+
+  }
 
 }
 
@@ -2642,7 +2917,13 @@ audio.addEventListener(
 
 audio.addEventListener(
   "timeupdate",
-  updateProgress
+  ()=>{
+    
+    updateProgress();
+
+    updateMediaSessionPosition();
+
+  }
 );
 
 
@@ -3940,10 +4221,11 @@ function updateStats(){
    INITIALIZE
 ===================================================== */
 
+setupMediaSession();
+
 updateVolumeIcon(
   0.7
 );
-
 
 /* =====================================================
    REAL-TIME SONG UPDATES
