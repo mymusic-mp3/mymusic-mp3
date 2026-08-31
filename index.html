@@ -2136,6 +2136,9 @@ function playSong(index){
     "Unknown Artist";
 
 
+  updateMediaSession(song);
+
+
   audio.pause();
 
 
@@ -2271,6 +2274,98 @@ function updatePlayButton(){
     isPlaying
       ? "❚❚"
       : "▶";
+
+}
+
+
+/* =====================================================
+   MEDIA SESSION / LOCK SCREEN CONTROLS
+   Keeps the player connected to Android lock-screen media controls.
+===================================================== */
+
+function updateMediaSession(song){
+
+  if(!("mediaSession" in navigator) || !song){
+    return;
+  }
+
+  try{
+
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: song.title || "Unknown Song",
+      artist: song.artist || "Unknown Artist",
+      album: "My Music",
+      artwork: song.image ? [
+        {
+          src: song.image,
+          sizes: "512x512",
+          type: "image/jpeg"
+        }
+      ] : []
+    });
+
+    const setAction = (action, handler)=>{
+      try{
+        navigator.mediaSession.setActionHandler(action, handler);
+      }catch(error){
+        console.log("Media Session action not supported:", action);
+      }
+    };
+
+    setAction("play", ()=>{
+      audio.play().catch(()=>{});
+    });
+
+    setAction("pause", ()=>{
+      audio.pause();
+    });
+
+    setAction("previoustrack", ()=>{
+      previousSong();
+    });
+
+    setAction("nexttrack", ()=>{
+      nextSong();
+    });
+
+    setAction("seekbackward", (details)=>{
+      const seconds = details.seekOffset || 10;
+      audio.currentTime = Math.max(0, audio.currentTime - seconds);
+    });
+
+    setAction("seekforward", (details)=>{
+      const seconds = details.seekOffset || 10;
+      audio.currentTime = Math.min(
+        audio.duration || Infinity,
+        audio.currentTime + seconds
+      );
+    });
+
+    setAction("seekto", (details)=>{
+      if(details.fastSeek && "fastSeek" in audio){
+        audio.fastSeek(details.seekTime);
+      }else{
+        audio.currentTime = details.seekTime;
+      }
+    });
+
+  }catch(error){
+    console.log("Media Session setup error:", error);
+  }
+
+}
+
+
+function updateMediaPlaybackState(){
+
+  if(!("mediaSession" in navigator)){
+    return;
+  }
+
+  try{
+    navigator.mediaSession.playbackState =
+      audio.paused ? "paused" : "playing";
+  }catch(error){}
 
 }
 
@@ -2475,6 +2570,8 @@ audio.addEventListener(
 
     isPlaying = true;
 
+    updateMediaPlaybackState();
+
     setLoading(false);
 
     updatePlayButton();
@@ -2492,6 +2589,8 @@ audio.addEventListener(
   ()=>{
 
     isPlaying = false;
+
+    updateMediaPlaybackState();
 
     setLoading(false);
 
@@ -2519,6 +2618,8 @@ audio.addEventListener(
   "playing",
   ()=>{
 
+    updateMediaPlaybackState();
+
     setLoading(false);
 
   }
@@ -2528,6 +2629,8 @@ audio.addEventListener(
 audio.addEventListener(
   "ended",
   ()=>{
+
+    updateMediaPlaybackState();
 
     setLoading(false);
 
@@ -2574,6 +2677,8 @@ audio.addEventListener(
     if(audio.src){
 
       isPlaying = false;
+
+      updateMediaPlaybackState();
 
       updatePlayButton();
 
