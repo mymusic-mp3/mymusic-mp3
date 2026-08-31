@@ -2245,19 +2245,25 @@ function togglePlay(){
 
 
     audio.play()
-      .then(()=>{
+  .then(()=>{
 
-        isPlaying = true;
+    isPlaying = true;
 
-        setLoading(false);
+    setLoading(false);
 
-        updatePlayButton();
+    updatePlayButton();
 
-        renderSongs(
-          currentList
-        );
+    updateMediaPlaybackState();
 
-      })
+    updateMediaSession(song);
+
+    updateMediaSessionPosition();
+
+    renderSongs(
+      currentList
+    );
+
+  })
       .catch(()=>{
 
         isPlaying = false;
@@ -2937,6 +2943,8 @@ audio.addEventListener(
     updateDuration();
 
     updateProgress();
+
+    updateMediaSessionPosition();
 
   }
 );
