@@ -11,6 +11,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
+<link rel="manifest" href="/mymusic-mp3/manifest.json">
+<meta name="theme-color" content="#7b20ff">
+
 <style>
 
 *{
@@ -4261,6 +4264,30 @@ supabaseClient
   )
   .subscribe();
 
+</script>
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register(
+      "/mymusic-mp3/pwabuilder-sw.js",
+      {
+        scope: "/mymusic-mp3/"
+      }
+    )
+    .then((registration) => {
+      console.log(
+        "My Music Service Worker registered:",
+        registration.scope
+      );
+    })
+    .catch((error) => {
+      console.error(
+        "My Music Service Worker registration failed:",
+        error
+      );
+    });
+  });
+}
 </script>
 
 </body>
